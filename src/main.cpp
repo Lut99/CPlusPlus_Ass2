@@ -4,7 +4,7 @@
  * Created:
  *   3/4/2020, 11:26:01 AM
  * Last edited:
- *   3/19/2020, 12:40:08 PM
+ *   3/19/2020, 4:12:12 PM
  * Auto updated?
  *   Yes
  *
@@ -83,7 +83,7 @@ Options* parse_input(int argc, char** argv) {
                     to_ret.mode = compress;
                     break;
                 case 'd':
-                    to_ret.mode = compress;
+                    to_ret.mode = decompress;
                     break;
                 case 'h':
                     to_ret.mode = help;

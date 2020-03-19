@@ -4,7 +4,7 @@
  * Created:
  *   3/4/2020, 11:11:31 AM
  * Last edited:
- *   3/19/2020, 1:29:20 PM
+ *   3/19/2020, 4:18:17 PM
  * Auto updated?
  *   Yes
  *
@@ -90,52 +90,62 @@ std::string decompress_stream(std::istream& s_com, std::ostream& s_raw) {
             // An error occurred
             return "Could not read character from stream";
         }
-
         // Determine the next course of action based on the state
-        if (state == character) {
-            // If we encounter a '\\', escape
-            if (c == '\\') {
-                state = escaping;
+        switch(state) {
+            case character:
+                // If we encounter a '\\', escape
+                if (c == '\\') {
+                    state = escaping;
+                    cerr << "SWITCHING TO escaping BASED ON '" << c << "'" << endl;
+                    continue;
+                } else if (c >= '0' && c <= '9') {
+                    state = number;
+                    n = (int) (c - '0');
+                    cerr << "SWITCHING TO number BASED ON '" << c << "'" << endl;
+                    continue;
+                }
+                // If we have already seen a character, print the previous one one time
+                if (saw_character) {
+                    s_raw << to_print;
+                }
+                to_print = c;
+                saw_character = true;
                 continue;
-            } else if (c >= '0' && c <= '9') {
-                state = number;
+            case escaping:
+                // Simply accept whatever character is here
+
+                // If we have already seen a character, print the previous one one time
+                if (saw_character) {
+                    s_raw << to_print;
+                }
+                to_print = c;
+                saw_character = true;
+                state = character;
+                cerr << "SWITCHING TO character BASED ON '" << c << "'" << endl;
+                continue;
+            case number:
+                if (c >= '0' && c <= '9') {
+                    // Add this to the number
+                    n *= 10;
+                    n += (int) (c - '0');
+                    continue;
+                }
+
+                // Print the character the computed number of times
+                for (int i = 0; i < n; i++) {
+                    s_raw << to_print;
+                }
+                // Put the currently read character back on the stream though
                 s_com.putback(c);
+                // Reset saw_character and go to state character
+                saw_character = false;
+                state = character;
+                cerr << "SWITCHING TO character BASED ON '" << c << "'" << endl;
                 continue;
-            }
-            // If we have already seen a character, print the previous one one time
-            if (saw_character) {
-                cout << to_print;
-            }
-            to_print = c;
-            saw_character = true;
-        } else if (state == escaping) {
-            // Simply accept whatever character is here
-
-            // If we have already seen a character, print the previous one one time
-            if (saw_character) {
-                cout << to_print;
-            }
-            to_print = c;
-            saw_character = true;
-            state = character;
-        } else if (state == number) {
-            if (c >= '0' || c <= '9') {
-                // Add this to the number
-                n *= 10;
-                n += (int) (c - '0');
+            default:
+                // Should never happen
+                cerr << "Something is very wrong!" << endl;
                 continue;
-            }
-
-            // Print the character the computed number of times
-            for (int i = 0; i < n; i++) {
-                s_raw << to_print;
-            }
-            // Put the currently read character back on the stream though
-            s_com.putback(c);
-            // Reset the number and to_print, go to state character
-            n = 0;
-            saw_character = false;
-            state = character;
         }
     }
 
