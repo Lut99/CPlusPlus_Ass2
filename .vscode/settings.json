@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.cvc": "c",
+        "iostream": "cpp",
+        "new": "cpp",
+        "ostream": "cpp",
+        "cmath": "cpp",
+        "*.tcc": "cpp"
+    }
+}

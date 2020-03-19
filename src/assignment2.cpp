@@ -4,7 +4,7 @@
  * Created:
  *   3/4/2020, 11:11:31 AM
  * Last edited:
- *   3/4/2020, 1:09:26 PM
+ *   3/19/2020, 1:29:20 PM
  * Auto updated?
  *   Yes
  *
@@ -18,9 +18,19 @@
  *   avoid escaping the character that follows it.
 **/
 
+#include <iostream>
+#include <cmath>
+
 #include "assignment2.hpp"
 
 using namespace std;
+
+
+enum ParseState {
+    character,
+    number,
+    escaping
+};
 
 
 std::string compress_stream(std::istream& s_raw, std::ostream& s_com) {
@@ -29,10 +39,7 @@ std::string compress_stream(std::istream& s_raw, std::ostream& s_com) {
     int sequence_length = 0;
     while(true) {
         char c;
-        s_raw >> c;
-        if (c == '\n' || c == ' ' || c == '\t') {
-            s_com << "LMAO";
-        }
+        s_raw.get(c);
         if (s_raw.eof()) {
             break;
         } else if (s_raw.fail()) {
@@ -70,7 +77,67 @@ std::string compress_stream(std::istream& s_raw, std::ostream& s_com) {
 
 std::string decompress_stream(std::istream& s_com, std::ostream& s_raw) {
     // Read from the istream until we encounter eof
-    while (!s_com.eof()) {
-        
+    int n = 0;
+    char to_print = '\0';
+    bool saw_character = false;
+    ParseState state = character;
+    while (true) {
+        char c;
+        s_com.get(c);
+        if (s_com.eof()) {
+            break;
+        } else if (s_com.fail()) {
+            // An error occurred
+            return "Could not read character from stream";
+        }
+
+        // Determine the next course of action based on the state
+        if (state == character) {
+            // If we encounter a '\\', escape
+            if (c == '\\') {
+                state = escaping;
+                continue;
+            } else if (c >= '0' && c <= '9') {
+                state = number;
+                s_com.putback(c);
+                continue;
+            }
+            // If we have already seen a character, print the previous one one time
+            if (saw_character) {
+                cout << to_print;
+            }
+            to_print = c;
+            saw_character = true;
+        } else if (state == escaping) {
+            // Simply accept whatever character is here
+
+            // If we have already seen a character, print the previous one one time
+            if (saw_character) {
+                cout << to_print;
+            }
+            to_print = c;
+            saw_character = true;
+            state = character;
+        } else if (state == number) {
+            if (c >= '0' || c <= '9') {
+                // Add this to the number
+                n *= 10;
+                n += (int) (c - '0');
+                continue;
+            }
+
+            // Print the character the computed number of times
+            for (int i = 0; i < n; i++) {
+                s_raw << to_print;
+            }
+            // Put the currently read character back on the stream though
+            s_com.putback(c);
+            // Reset the number and to_print, go to state character
+            n = 0;
+            saw_character = false;
+            state = character;
+        }
     }
+
+    return "";
 }
